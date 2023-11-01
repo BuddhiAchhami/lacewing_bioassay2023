@@ -1,0 +1,87 @@
+---
+title: "Lacewing lab bioassay 2023"
+output: html_document
+date: '2023-10-31'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(ggplot2)
+library(multcomp)
+library(sandwich)
+library(writexl)
+library(emmeans)
+library(survival)
+library(ggfortify)
+library(ranger)
+library(survival)
+
+```
+
+
+```{r}
+#Getting data from the folder
+setwd("C:/Users/bachhami/Box Sync/UCDavis_Buddhi/GreenhouseBioassay")
+
+lacewing_bioassay <- read_excel ("NEBioassayData.xlsx",
+                                sheet = "NE_data_ForR")
+#Getting summary
+head(lacewing_bioassay)
+
+```
+
+```{r}
+#Selecting some variables
+lacewing_bioassay.1 <- lacewing_bioassay %>% 
+  dplyr::select ("Block", "Compound", "Status", "Application", "PercentCoverage", "DAT", "Time", "Compound","Trial", "Status1")
+
+
+#Changing into factor
+
+lacewing_bioassay.1$Application <- as.factor (lacewing_bioassay.1$Application)
+lacewing_bioassay.1$Block <- as.factor (lacewing_bioassay.1$Block)
+lacewing_bioassay.1$Trial <- as.factor (lacewing_bioassay.1$Trial)
+lacewing_bioassay.1$Compound <- as.factor (lacewing_bioassay.1$Compound)
+lacewing_bioassay.1$PercentCoverage <- as.factor (lacewing_bioassay.1$PercentCoverage)
+
+
+lacewing_bioassay.2<-lacewing_bioassay.1 %>%
+  mutate(PercentCoverage = case_when(
+   PercentCoverage == '0' ~ '0%',
+    PercentCoverage == '2' ~ '2%',
+    PercentCoverage == '7' ~ '7%',
+    PercentCoverage == '8' ~ '8%',
+    PercentCoverage == '30' ~ '30%')) 
+
+class (lacewing_bioassay.2$PercentCoverage)
+
+lacewing_bioassay.2$PercentCoverage <- factor(lacewing_bioassay.2$PercentCoverage, levels = c("0%", "2%", "7%", "8%", "30%"))
+
+head (lacewing_bioassay.2)
+
+str (lacewing_bioassay.2$PercentCoverage)
+class (lacewing_bioassay.2$PercentCoverage)
+```
+
+```{r}
+aa_fit <-aareg(Surv(Time, Status1) ~ Compound + PercentCoverage, data = lacewing_bioassay.2)
+aa_fit
+
+autoplot(aa_fit)
+
+library(survminer)
+
+library(survival)
+km_trt_fit <- survfit(Surv(Time, Status1) ~ Compound + PercentCoverage, data = lacewing_bioassay.2)
+
+ggsurv <- ggsurvplot(km_trt_fit, surv.median.line = "hv", conf.int = TRUE)
+
+plot1 <- ggsurv$plot +theme_bw()+ facet_grid(PercentCoverage ~ Compound)
+plot1 + theme(legend.position = "none")
+```
+
