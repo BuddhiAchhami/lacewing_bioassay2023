@@ -86,6 +86,20 @@ plot1 + theme(legend.position = "none")
 ```
 
 ```{r}
+#Creating function
 
+compound_mean <- function(df, group_var, mean_var){
+  df%>%
+    group_by ({{group_var}})%>%
+    summarize(
+      mean_status = mean ({{mean_var}}, na.rm = TRUE),
+      sd_status = sd({{mean_var}}, na.rm = TRUE),
+      se_status = sd_status/sqrt(n()),
+      .groups = "drop"
+    )
+}
+
+lacewing_bioassay.1%>%
+  compound_mean (Compound, Status1)
 ```
 
